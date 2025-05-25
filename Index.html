@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+
+<html lang="pl">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quiz Pożarowy</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    .card { background: white; padding: 20px; border-radius: 12px; max-width: 600px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .question { font-size: 1.2em; margin-bottom: 20px; font-weight: bold; }
+    .option { display: block; margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 8px; background: #fff; cursor: pointer; }
+    .option.correct { background: #d4edda; border-color: #28a745; }
+    .option.incorrect { background: #f8d7da; border-color: #dc3545; }
+    .button { margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    .button:hover { background: #0056b3; }
+    #fileInput { margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+<div class="card">
+<input accept=".json" id="fileInput" type="file"/>
+<div id="quiz"></div>
+</div>
+<script>
+    let questions = [];
+    let current = 0;
+    let selected = new Set();
+
+    document.getElementById("fileInput").addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        questions = JSON.parse(e.target.result);
+        current = 0;
+        renderQuestion();
+      };
+      reader.readAsText(file);
+    });
+
+    function renderQuestion() {
+      const quiz = document.getElementById("quiz");
+      if (!questions.length) return;
+
+      const q = questions[current];
+      selected = new Set();
+
+      let html = `<div class='question'>${q.question}</div>`;
+      q.options.forEach((option, i) => {
+        html += `<button class='option' id='opt-${i}' onclick='toggleAnswer(${i})'>${option}</button>`;
+      });
+      html += `<button class='button' onclick='submitAnswers()'>Sprawdź odpowiedź</button>`;
+      quiz.innerHTML = html;
+    }
+
+    function toggleAnswer(index) {
+      const btn = document.getElementById(`opt-${index}`);
+      if (selected.has(index)) {
+        selected.delete(index);
+        btn.style.background = "#fff";
+        btn.style.borderColor = "#ccc";
+      } else {
+        selected.add(index);
+        btn.style.border = "3px solid #b266ff";
+        btn.style.border = "3px solid #b266ff";
+      }
+    }
+
+    function submitAnswers() {
+      const q = questions[current];
+      const buttons = document.querySelectorAll(".option");
+      const correct = Array.isArray(q.correct) ? q.correct : [q.correct];
+
+      buttons.forEach((btn, i) => {
+        btn.disabled = true;
+        if (correct.includes(i)) btn.style.color = "#28a745"; btn.style.fontWeight = "bold";
+        if (selected.has(i) && !correct.includes(i)) btn.classList.add("incorrect");
+      });
+
+      const nextBtn = document.createElement("button");
+      nextBtn.textContent = "Następne pytanie";
+      nextBtn.className = "button";
+      nextBtn.onclick = () => {
+        current = (current + 1) % questions.length;
+        renderQuestion();
+      };
+      document.getElementById("quiz").appendChild(nextBtn);
+    }
+  </script>
+</body>
+</html>
